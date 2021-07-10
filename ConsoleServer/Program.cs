@@ -7,8 +7,8 @@ namespace ConsoleServer
 {
 	internal sealed class Program
 	{
-		const string IP = "192.168.0.12";
-		const int PORT = 21;
+		const string IP = "127.0.0.1";
+		const int PORT = 15000;
 
 		static void Main(string[] args)
 		{
