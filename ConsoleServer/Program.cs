@@ -1,7 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace ConsoleServer
 {
@@ -10,7 +10,7 @@ namespace ConsoleServer
 		const string IP = "192.168.0.12";
 		const int PORT = 21;
 
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
 			Console.Title = "Server";
 
@@ -27,45 +27,25 @@ namespace ConsoleServer
 			{
 				while (true)
 				{
-					Console.WriteLine($"Waiting for connection...");
+					var tcpClient = tcpListener.AcceptTcpClient();
 
-					using (var client = tcpListener.AcceptTcpClient())
+					if (tcpClient.Connected)
 					{
-						if (client.Connected)
-						{
-							Console.WriteLine($"The client is connected");
-							Console.WriteLine($"Client remote endpoint: {client.Client.RemoteEndPoint}");
+						Console.WriteLine($"Client {tcpClient.Client.RemoteEndPoint} is connected");
 
-							using (var networkStream = client.GetStream())
-							{
-								Console.WriteLine($"Waiting for a client message...");
+						var tcpClientHandler = new TcpClientHandler(tcpClient);
+						var tcpClientThread = new Thread(new ThreadStart(tcpClientHandler.Process));
 
-								using (var streamReader = new StreamReader(networkStream))
-								{
-									var clientMessage = streamReader.ReadLine();
-
-									Console.WriteLine($"Client message: {clientMessage}");
-									Console.Write($"Your message: ");
-
-									var serverMessage = Console.ReadLine();
-
-									using (var streamWriter = new StreamWriter(networkStream) { AutoFlush = true })
-									{
-										streamWriter.WriteLine(serverMessage);
-									}
-								}
-							}
-
-							Console.WriteLine(string.Empty);
-						}
-						else
-							Console.WriteLine($"The client is not connected");
+						tcpClientThread.Start();
 					}
+					else
+						Console.WriteLine($"The client is not connected");
 				}
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex.Message);
+				Loger.WriteException(ex);
 			}
 			finally
 			{
